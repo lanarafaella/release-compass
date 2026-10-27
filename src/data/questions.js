@@ -130,7 +130,7 @@ export const RAG_QUESTIONS = [
     label: 'Where does the content come from?',
     help: 'Select all that apply.',
     options: [
-      { value: 'kb', label: 'An approved knowledge base owned by the team' },
+      { value: 'kb', label: 'Own approved knowledge base' },
       { value: 'uploads', label: 'Documents uploaded by users' },
       { value: 'web', label: 'Web pages or search results' },
       { value: 'tools', label: 'Output of other tools or systems' },

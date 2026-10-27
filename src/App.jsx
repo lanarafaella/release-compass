@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   RISK_QUESTIONS,
   CAPABILITY_QUESTIONS,
@@ -22,6 +22,18 @@ import {
 const STORE = 'ai-release-guide:v1'
 
 const DEFAULT_SIZING = { slices: 4, target: 90, expected: 98, confidence: '95', available: '' }
+
+const TABS = [
+  { id: 'risk', label: 'Product & risk' },
+  { id: 'capabilities', label: 'Capabilities' },
+  { id: 'plan', label: 'Evaluation plan' },
+  { id: 'size', label: 'Test set size' },
+]
+
+function hashTab() {
+  const id = window.location.hash.replace('#', '')
+  return TABS.some((t) => t.id === id) ? id : 'risk'
+}
 
 function loadState() {
   const fresh = { name: '', description: '', answers: {}, sizing: DEFAULT_SIZING }
@@ -92,12 +104,12 @@ function Question({ q, value, onChange }) {
   )
 }
 
-function Section({ title, intro, children }) {
+function Section({ title, intro, children, grid }) {
   return (
     <section className="card">
       <h2>{title}</h2>
       {intro && <p className="intro">{intro}</p>}
-      {children}
+      <div className={grid ? `q-grid${grid === 'wide' ? ' wide' : ''}` : undefined}>{children}</div>
     </section>
   )
 }
@@ -137,8 +149,55 @@ function PracticeCard({ p }) {
   )
 }
 
+function TierCard({ result, unknown }) {
+  const tierClass = result.tier === null ? 'none' : ['low', 'medium', 'high'][result.tier]
+  return (
+    <div className={`tier-card ${tierClass}`}>
+      <p className="tier-label">Risk level</p>
+      {result.tier === null ? (
+        <>
+          <p className="tier-name">Not set yet</p>
+          <p className="tier-text">Answer the questions on the Product &amp; risk tab to see the level.</p>
+        </>
+      ) : (
+        <>
+          <div className="tier-head">
+            <TierBars tier={result.tier} />
+            <p className="tier-name">{TIER_NAMES[result.tier]}</p>
+          </div>
+          <p className="tier-text">{TIER_TEXT[result.tier]}</p>
+          <p className="tier-why">
+            <strong>Set by:</strong> {result.drivers.map((d) => `${d.id} (${d.answer})`).join(', ')}
+          </p>
+          {result.answered < result.total && result.tier < 2 && (
+            <p className="tier-warn">
+              {result.answered} of {result.total} risk questions answered. The level can still go up.
+            </p>
+          )}
+        </>
+      )}
+      {unknown.length > 0 && (
+        <p className="tier-warn">
+          Unknown answers: {unknown.join(', ')}. Treated as the riskiest option. Find out and answer them.
+        </p>
+      )}
+    </div>
+  )
+}
+
+function Pager({ back, next, go }) {
+  return (
+    <div className="pager">
+      {back ? <button type="button" className="secondary" onClick={() => go(back.id)}>&larr; {back.label}</button> : <span />}
+      {next ? <button type="button" onClick={() => go(next.id)}>Next: {next.label} &rarr;</button> : <span />}
+    </div>
+  )
+}
+
 export default function App() {
   const [state, setState] = useState(loadState)
+  const [tab, setTab] = useState(hashTab)
+  const [area, setArea] = useState(null)
   const [showRec, setShowRec] = useState(true)
   const [copied, setCopied] = useState(false)
   const [theme, setTheme] = useState(() => {
@@ -148,6 +207,9 @@ export default function App() {
       return 'dark'
     }
   })
+  const tabRefs = useRef({})
+  const { name, description, answers, sizing } = state
+  const setSizing = (next) => setState((s) => ({ ...s, sizing: next }))
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme
@@ -157,8 +219,6 @@ export default function App() {
       // ignore
     }
   }, [theme])
-  const { name, description, answers, sizing } = state
-  const setSizing = (next) => setState((s) => ({ ...s, sizing: next }))
 
   useEffect(() => {
     try {
@@ -167,6 +227,31 @@ export default function App() {
       // ignore
     }
   }, [state])
+
+  useEffect(() => {
+    const onPop = () => setTab(hashTab())
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [])
+
+  const go = (id) => {
+    if (id === tab) return
+    window.history.pushState(null, '', `#${id}`)
+    setTab(id)
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }
+
+  const onTabKey = (e, index) => {
+    let next = null
+    if (e.key === 'ArrowRight') next = (index + 1) % TABS.length
+    if (e.key === 'ArrowLeft') next = (index - 1 + TABS.length) % TABS.length
+    if (e.key === 'Home') next = 0
+    if (e.key === 'End') next = TABS.length - 1
+    if (next === null) return
+    e.preventDefault()
+    go(TABS[next].id)
+    tabRefs.current[TABS[next].id]?.focus()
+  }
 
   const setAnswer = (id, value) =>
     setState((s) => {
@@ -180,11 +265,16 @@ export default function App() {
   const practices = useMemo(() => practicesFor(answers), [answers])
   const unknown = unknownAnswers(answers)
   const rag = showRag(answers)
+
+  const capQuestions = [...CAPABILITY_QUESTIONS, ...(rag ? RAG_QUESTIONS : []), ...PEOPLE_QUESTIONS]
+  const capAnswered = capQuestions.filter((q) => answers[q.id] !== undefined).length
+
   const visible = practices.filter((p) => showRec || p.applied === 'required')
   const areas = AREAS.filter((a) => visible.some((p) => p.area === a))
+  const currentArea = area === 'all' ? 'all' : areas.includes(area) ? area : areas[0]
+  const shown = currentArea === 'all' ? visible : visible.filter((p) => p.area === currentArea)
   const required = practices.filter((p) => p.applied === 'required').length
   const recommended = practices.length - required
-  const tierClass = result.tier === null ? 'none' : ['low', 'medium', 'high'][result.tier]
 
   const report = () => buildReport({ name, description, answers, sizing })
 
@@ -214,6 +304,14 @@ export default function App() {
     }
   }
 
+  const tabMeta = {
+    risk: `${result.answered}/${result.total}`,
+    capabilities: `${capAnswered}/${capQuestions.length}`,
+    plan: result.tier === null ? '' : String(required),
+    size: '',
+  }
+  const tierClass = result.tier === null ? 'none' : ['low', 'medium', 'high'][result.tier]
+
   return (
     <div className="page">
       <nav className="topbar" aria-label="Product">
@@ -223,9 +321,10 @@ export default function App() {
         </span>
         <span className="topbar-right">
           <span className="privacy-pill">Runs in your browser. Nothing is sent anywhere.</span>
+          <button type="button" className="ghost small" onClick={reset}>Reset</button>
           <button
             type="button"
-            className="ghost theme-toggle"
+            className="ghost small"
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
           >
@@ -234,168 +333,215 @@ export default function App() {
         </span>
       </nav>
 
-      <header className="hero">
-        <p className="eyebrow">{TAGLINE}</p>
-        <h1>How should we evaluate this AI product?</h1>
-        <p className="lede">
-          Answer a few questions about your product. You get a risk level and a list of evaluation practices,
-          each with the public source behind it.
-        </p>
-        <ol className="steps">
-          <li><span className="step-n">1</span><span>Describe the product</span></li>
-          <li><span className="step-n">2</span><span>Answer the questions</span></li>
-          <li><span className="step-n">3</span><span>Get your evaluation plan</span></li>
-        </ol>
-      </header>
+      {tab === 'risk' && (
+        <header className="hero">
+          <p className="eyebrow">{TAGLINE}</p>
+          <h1>How should we evaluate this AI product?</h1>
+          <p className="lede">
+            Answer a few questions. You get a risk level and a list of evaluation practices, each with the public
+            source behind it.
+          </p>
+        </header>
+      )}
 
-      <div className="layout">
-        <div className="form">
-          <Section title="1. Your product" intro="Optional. The text appears in the exported report only. It does not change the result.">
-            <label className="field">
-              <span>Name</span>
-              <input
-                type="text"
-                value={name}
-                placeholder="For example: Customer-facing assistant"
-                onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
-              />
-            </label>
-            <label className="field">
-              <span>What does it do?</span>
-              <textarea
-                rows={4}
-                value={description}
-                placeholder="Who uses it, what it answers or does, which data and tools it touches."
-                onChange={(e) => setState((s) => ({ ...s, description: e.target.value }))}
-              />
-            </label>
-          </Section>
-
-          <Section
-            title="2. What can go wrong"
-            intro="These answers set the risk level. The highest answer wins. If you do not know, choose “I don't know”: it counts as High."
-          >
-            {RISK_QUESTIONS.map((q) => (
-              <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
-            ))}
-          </Section>
-
-          <Section
-            title="3. What the system can do"
-            intro="These answers do not change the risk level. They switch extra practices on."
-          >
-            {CAPABILITY_QUESTIONS.map((q) => (
-              <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
-            ))}
-          </Section>
-
-          {rag && (
-            <Section
-              title="4. RAG evaluation"
-              intro="Shown because the system reads external content (retrieval-augmented generation)."
+      <div className="tabbar">
+        <div className="tabs" role="tablist" aria-label="Sections">
+          {TABS.map((t, i) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              id={`tab-${t.id}`}
+              aria-selected={tab === t.id}
+              aria-controls={`panel-${t.id}`}
+              tabIndex={tab === t.id ? 0 : -1}
+              ref={(el) => { tabRefs.current[t.id] = el }}
+              className={tab === t.id ? 'tab on' : 'tab'}
+              onClick={() => go(t.id)}
+              onKeyDown={(e) => onTabKey(e, i)}
             >
-              {RAG_QUESTIONS.map((q) => (
+              <span className="tab-n">{i + 1}</span>
+              <span className="tab-label">{t.label}</span>
+              {tabMeta[t.id] && <span className="tab-count">{tabMeta[t.id]}</span>}
+            </button>
+          ))}
+        </div>
+        {result.tier !== null && (
+          <span className={`tier-chip ${tierClass}`} title="Risk level">
+            <TierBars tier={result.tier} />
+            <span>{TIER_NAMES[result.tier]} risk</span>
+          </span>
+        )}
+      </div>
+
+      <div className="panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
+        {tab === 'risk' && (
+          <div className="layout">
+            <div className="form">
+              <Section title="Your product" intro="Optional. The text appears in the exported report only. It does not change the result.">
+                <div className="two-fields">
+                  <label className="field">
+                    <span>Name</span>
+                    <input
+                      type="text"
+                      value={name}
+                      placeholder="For example: Customer-facing assistant"
+                      onChange={(e) => setState((s) => ({ ...s, name: e.target.value }))}
+                    />
+                  </label>
+                  <label className="field">
+                    <span>What does it do?</span>
+                    <textarea
+                      rows={3}
+                      value={description}
+                      placeholder="Who uses it, what it answers or does, which data and tools it touches."
+                      onChange={(e) => setState((s) => ({ ...s, description: e.target.value }))}
+                    />
+                  </label>
+                </div>
+              </Section>
+              <Section
+                grid
+                title="What can go wrong"
+                intro="These answers set the risk level. The highest answer wins. If you do not know, choose “I don't know”: it counts as High."
+              >
+                {RISK_QUESTIONS.map((q) => (
+                  <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
+                ))}
+              </Section>
+              <Pager next={TABS[1]} go={go} />
+            </div>
+            <aside className="summary" aria-live="polite">
+              <TierCard result={result} unknown={unknown} />
+              <p className="fine">
+                Guidance based on public sources. It is not a standard, not legal advice and not a release approval. Runs in your browser; nothing is sent anywhere.
+              </p>
+            </aside>
+          </div>
+        )}
+
+        {tab === 'capabilities' && (
+          <div className="form wide-form">
+            <Section
+              grid="wide"
+              title="What the system can do"
+              intro="These answers do not change the risk level. They switch extra practices on."
+            >
+              {CAPABILITY_QUESTIONS.map((q) => (
                 <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
               ))}
             </Section>
-          )}
-
-          <Section title={rag ? '5. People and feedback' : '4. People and feedback'}>
-            {PEOPLE_QUESTIONS.map((q) => (
-              <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
-            ))}
-          </Section>
-        </div>
-
-        <aside className="summary" aria-live="polite">
-          <div className={`tier-card ${tierClass}`}>
-            <p className="tier-label">Risk level</p>
-            {result.tier === null ? (
-              <>
-                <p className="tier-name">Not set yet</p>
-                <p className="tier-text">Answer the questions in section 2 to see the level.</p>
-              </>
-            ) : (
-              <>
-                <div className="tier-head">
-                  <TierBars tier={result.tier} />
-                  <p className="tier-name">{TIER_NAMES[result.tier]}</p>
-                </div>
-                <p className="tier-text">{TIER_TEXT[result.tier]}</p>
-                <p className="tier-why">
-                  <strong>Set by:</strong>{' '}
-                  {result.drivers.map((d) => `${d.id} (${d.answer})`).join(', ')}
-                </p>
-                {result.answered < result.total && result.tier < 2 && (
-                  <p className="tier-warn">
-                    {result.answered} of {result.total} risk questions answered. The level can still go up.
-                  </p>
-                )}
-              </>
+            {rag && (
+              <Section
+                grid="wide"
+                title="RAG evaluation"
+                intro="Shown because the system reads external content (retrieval-augmented generation)."
+              >
+                {RAG_QUESTIONS.map((q) => (
+                  <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
+                ))}
+              </Section>
             )}
+            <Section grid="wide" title="People and feedback">
+              {PEOPLE_QUESTIONS.map((q) => (
+                <Question key={q.id} q={q} value={answers[q.id]} onChange={setAnswer} />
+              ))}
+            </Section>
             {unknown.length > 0 && (
-              <p className="tier-warn">
-                Unknown answers: {unknown.join(', ')}. Treated as the riskiest option. Find out and answer them.
+              <p className="tier-warn wide-note">
+                Unknown answers: {unknown.join(', ')}. They are treated as the riskiest option. Find out and answer them.
               </p>
             )}
+            <Pager back={TABS[0]} next={TABS[2]} go={go} />
           </div>
+        )}
 
-          {result.tier !== null && (
-            <div className="counts">
-              <div><strong>{required}</strong><span>core practices</span></div>
-              <div><strong>{recommended}</strong><span>recommended</span></div>
-            </div>
-          )}
+        {tab === 'plan' && (
+          <>
+            {result.tier === null ? (
+              <section className="card empty">
+                <h2>No plan yet</h2>
+                <p className="intro">Answer the risk questions first. The plan is built from your answers.</p>
+                <button type="button" onClick={() => go('risk')}>Go to Product &amp; risk</button>
+              </section>
+            ) : (
+              <>
+                <div className="plan-top">
+                  <TierCard result={result} unknown={unknown} />
+                  <div className="plan-side">
+                    <div className="counts">
+                      <div><strong>{required}</strong><span>core practices</span></div>
+                      <div><strong>{recommended}</strong><span>recommended</span></div>
+                    </div>
+                    <div className="actions">
+                      <button type="button" onClick={download}>Download report</button>
+                      <button type="button" className="secondary" onClick={copy}>{copied ? 'Copied' : 'Copy report'}</button>
+                    </div>
+                    <label className="toggle">
+                      <input type="checkbox" checked={showRec} onChange={(e) => setShowRec(e.target.checked)} />
+                      Show recommended practices
+                    </label>
+                  </div>
+                </div>
 
-          <div className="actions">
-            <button onClick={download} disabled={result.tier === null}>Download report</button>
-            <button className="secondary" onClick={copy} disabled={result.tier === null}>
-              {copied ? 'Copied' : 'Copy report'}
-            </button>
-            <button className="ghost" onClick={reset}>Clear</button>
-          </div>
-          <p className="fine">
-            Guidance based on public sources. It is not a standard, not legal advice and not a release approval.
-          </p>
-        </aside>
+                <div className="plan-body">
+                  <div className="area-nav" role="group" aria-label="Areas">
+                    {areas.map((a) => (
+                      <button
+                        key={a}
+                        type="button"
+                        className={currentArea === a ? 'area-btn on' : 'area-btn'}
+                        onClick={() => setArea(a)}
+                      >
+                        <span>{a}</span>
+                        <span className="area-count">{visible.filter((p) => p.area === a).length}</span>
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className={currentArea === 'all' ? 'area-btn on' : 'area-btn'}
+                      onClick={() => setArea('all')}
+                    >
+                      <span>All areas</span>
+                      <span className="area-count">{visible.length}</span>
+                    </button>
+                  </div>
+                  <div className="area-content">
+                    <h2 className="area-title">{currentArea === 'all' ? 'All areas' : currentArea}</h2>
+                    <p className="intro">
+                      Core practices are what this guide treats as expected at this level. Recommended practices
+                      help but are not expected. Open a practice to see why it matters and where it comes from.
+                    </p>
+                    {shown.map((p) => <PracticeCard key={p.id} p={p} />)}
+                  </div>
+                </div>
+
+                <footer className="foot">
+                  <p>
+                    Source references were checked against the original texts on 2026-10-26 (for the OWASP Agentic
+                    Top 10, entry titles only). Sources: NIST AI RMF 1.0 and AI 600-1, OWASP Top 10 for LLM
+                    Applications (2025) and for Agentic Applications (2026), FDA, Health Canada and MHRA Good
+                    Machine Learning Practice, WHO guidance on AI for health, FTC Act Section 5 and Health Breach
+                    Notification Rule. RAGAS is mentioned as an example tool.
+                  </p>
+                  <p>
+                    The risk-level rule (highest answer wins) and the Core and Recommended labels are this
+                    guide&rsquo;s own guidance. They are not taken from any of the sources.
+                  </p>
+                </footer>
+                <Pager back={TABS[1]} next={TABS[3]} go={go} />
+              </>
+            )}
+          </>
+        )}
+
+        {tab === 'size' && (
+          <>
+            <Sizing sizing={sizing} setSizing={setSizing} />
+            <Pager back={TABS[2]} go={go} />
+          </>
+        )}
       </div>
-
-      {result.tier !== null && (
-        <section className="results">
-          <div className="results-head">
-            <h2>Evaluation practices</h2>
-            <label className="toggle">
-              <input type="checkbox" checked={showRec} onChange={(e) => setShowRec(e.target.checked)} />
-              Show recommended practices
-            </label>
-          </div>
-          <p className="intro">
-            Core practices are what this guide treats as expected at this level. Recommended practices help but
-            are not expected. Open a practice to see why it matters and where it comes from. Source references were
-            checked against the original texts on 2026-10-26 (for the OWASP Agentic Top 10, entry titles only).
-          </p>
-          {areas.map((area) => (
-            <div key={area} className="area">
-              <h3>{area}</h3>
-              {visible.filter((p) => p.area === area).map((p) => <PracticeCard key={p.id} p={p} />)}
-            </div>
-          ))}
-        </section>
-      )}
-
-      <Sizing sizing={sizing} setSizing={setSizing} />
-
-      <footer className="foot">
-        <p>
-          Sources: NIST AI RMF 1.0 and AI 600-1, OWASP Top 10 for LLM Applications (2025) and for Agentic
-          Applications (2026), FDA, Health Canada and MHRA Good Machine Learning Practice, WHO guidance on AI
-          for health, FTC Act Section 5 and Health Breach Notification Rule. RAGAS is mentioned as an example tool.
-        </p>
-        <p>
-          The risk-level rule (highest answer wins) and the Core and Recommended labels are this guide&rsquo;s own
-          guidance. They are not taken from any of the sources.
-        </p>
-      </footer>
     </div>
   )
 }
