@@ -126,9 +126,39 @@ Suggested actions checked (short wording):
 | MP-5.1-005 | Conduct adversarial role-playing, red-teaming or chaos testing to find unforeseen failure modes | verified |
 | MG-4.1-002 | Post-deployment monitoring procedures, particularly for confabulation, CBRN or cyber risks | wording incomplete in extraction; not used |
 
+## WHO, Ethics and governance of artificial intelligence for health (2021)
+
+Published 28 June 2021 (WHO page). Read from the PDF. Six consensus principles, titles exact:
+(1) Protect autonomy; (2) Promote human well-being, human safety and the public interest;
+(3) Ensure transparency, explainability and intelligibility; (4) Foster responsibility and
+accountability; (5) Ensure inclusiveness and equity; (6) Promote artificial intelligence that is
+responsive and sustainable. Status: verified. Section numbers in the report: 5.1 to 5.6.
+
+Relevant passages (paraphrased):
+- 5.2: AI should meet regulatory requirements for safety, accuracy and efficacy before deployment;
+  developers and users have a continuous duty to measure and monitor performance and to assess
+  harm to individuals or groups. Verified.
+- 5.3: information should be documented before design and deployment and kept up to date after
+  approval. Verified.
+- 5.4: "human warranty": points of human supervision are set upstream and downstream of the
+  algorithm; there should be accountability and redress when something goes wrong. Verified.
+
+## WHO, Guidance on large multi-modal models (LMMs)
+
+Title: Ethics and governance of artificial intelligence for health. Guidance on large
+multi-modal models. The document gives 2024 as its year (suggested citation: Geneva: World
+Health Organization; 2024). The WHO web page lists 25 March 2025. Cite as 2024 and note the page date.
+Read from the PDF. Structure: Part I applications, challenges and risks (sections 2 and 3);
+Part II ethics and governance (sections 4 to 8: development, provision, deployment, liability,
+international governance).
+
+- Section 6.3 (responsibilities of deployers): a deployer should not use an LMM in an inappropriate
+  setting; should communicate risks and errors that harmed users, not in fine print; in some
+  circumstances may be responsible for suspending use or removing the application. Verified.
+- Automation bias (a clinician may overlook errors) is named as a risk in the document. Verified.
+
 ## Still to check
 
-WHO guidance on ethics and governance of AI for health (2021) and large multi-modal models (2024),
 FTC Act Section 5, FTC Health Breach Notification Rule.
 
 ## Books and courses (ideas, not standards)
