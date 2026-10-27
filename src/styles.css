@@ -99,7 +99,7 @@ h1 { margin: 0 0 14px; font-size: clamp(30px, 4vw, 46px); line-height: 1.08; let
 .step-n { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 6px; background: var(--accent); color: var(--accent-ink); font-family: var(--font-mono); font-size: 12px; font-weight: 700; }
 
 /* Layout */
-.layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 28px; align-items: start; }
+.layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
 
 .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: var(--radius); padding: 22px 26px; margin-bottom: 16px; box-shadow: var(--shadow); }
 .card h2 { margin: 0 0 6px; font-size: 22px; line-height: 1.25; letter-spacing: -0.03em; }
@@ -162,11 +162,26 @@ button:focus-visible, summary:focus-visible, a:focus-visible, .seg:has(input:foc
 .seg.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
 
 .checks { display: grid; gap: 10px; }
-.check { display: flex; gap: 12px; align-items: center; min-height: 40px; font-size: 15px; cursor: pointer; }
+.check { display: flex; gap: 12px; align-items: center; min-height: 40px; padding: 8px 14px; font-size: 15px; cursor: pointer; border: 1px solid var(--hairline-strong); border-radius: var(--radius-sm); transition: background 0.15s, border-color 0.15s, color 0.15s; }
+.check:hover { border-color: var(--accent); }
+.check.on { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 600; }
+.check.on input { accent-color: var(--accent-ink); }
+select.answered { background: var(--accent-soft); border-color: var(--accent); border-width: 2px; font-weight: 600; }
 .check input { width: 20px; height: 20px; accent-color: var(--accent); }
 
 /* Summary */
-.summary { position: sticky; top: 84px; }
+.summary { position: sticky; top: 84px; display: grid; gap: 12px; max-height: calc(100vh - 100px); overflow-y: auto; }
+.tier-card { animation: flash 0.9s ease-out; }
+.side-card { border: 1px solid var(--hairline); border-radius: var(--radius); padding: 16px 18px; background: var(--surface); }
+.side-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0 10px; }
+.side-counts div { text-align: center; background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px 4px; }
+.side-counts strong { display: block; font-family: var(--font-mono); font-size: 24px; color: var(--accent-text); }
+.side-counts span { font-size: 12.5px; color: var(--muted); }
+.side-line { margin: 8px 0; font-size: 13.5px; color: var(--muted); }
+.side-list { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 6px; }
+.side-list li { display: flex; gap: 8px; align-items: baseline; font-size: 13.5px; line-height: 1.4; padding: 4px 6px; border-radius: 4px; }
+.side-list li.new { animation: flash 1.4s ease-out; }
+@keyframes flash { from { background: var(--accent-soft); box-shadow: 0 0 0 2px var(--accent); } to { box-shadow: 0 0 0 0 transparent; } }
 .tier-card { border: 1px solid var(--hairline); border-left-width: 4px; border-radius: var(--radius); padding: 22px; background: var(--surface); box-shadow: var(--shadow); }
 .tier-card.low { background: var(--low-bg); border-color: var(--low); color: var(--low); }
 .tier-card.medium { background: var(--medium-bg); border-color: var(--medium); color: var(--medium); }
@@ -263,9 +278,8 @@ button.tab.on .tab-n { background: var(--accent); color: var(--accent-ink); }
 /* Two-column question grids keep each tab short */
 .q-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 36px; }
 .q-grid .question { display: flex; flex-direction: column; border-top: 0; padding: 12px 0 16px; }
-.q-grid .question > :last-child { margin-top: auto; }
 .q-grid .question:nth-child(n + 3) { border-top: 1px solid var(--hairline); }
-.q-grid.wide { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 32px; }
+.q-grid.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 32px; }
 .q-grid.wide .question { border-top: 0 !important; padding: 10px 0 14px; }
 .q-grid.wide .checks { gap: 2px; }
 .q-grid.wide .check { min-height: 34px; }
@@ -276,7 +290,7 @@ button.tab.on .tab-n { background: var(--accent); color: var(--accent-ink); }
 @media (min-width: 901px) and (max-width: 1100px) { .q-grid.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* Plan */
-.plan-top { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 20px; align-items: start; margin-bottom: 24px; }
+.plan-top { margin-bottom: 24px; }
 .plan-side { display: grid; gap: 12px; }
 .plan-side .counts { margin: 0; }
 .plan-body { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 28px; align-items: start; }
@@ -329,3 +343,25 @@ button.area-btn.on { background: var(--surface); border-color: var(--hairline-st
   .practice { break-inside: avoid; box-shadow: none; }
   .practice:not([open]) .p-body { display: block; }
 }
+
+/* Open dropdown list: the browser draws it on its own background, so set both colours */
+select { color-scheme: dark; }
+:root[data-theme='light'] select { color-scheme: light; }
+select option { background: var(--surface); color: var(--text); }
+.summary .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.summary .actions button { padding-inline: 8px; }
+
+/* Per-slice sizing rows */
+.conf-field { max-width: 320px; }
+.slice-rows { display: grid; gap: 12px; margin: 8px 0 14px; }
+.slice-row { border: 1px solid var(--hairline); border-left: 3px solid var(--hairline-strong); border-radius: var(--radius-sm); padding: 14px 16px; background: var(--surface-2); display: grid; grid-template-columns: minmax(0, 1fr) 150px; gap: 8px 18px; align-items: start; }
+.slice-row.zero { border-left-color: var(--accent); }
+.slice-main { display: grid; grid-template-columns: repeat(auto-fit, minmax(165px, 1fr)); gap: 10px 14px; }
+.row-field span { display: block; margin-bottom: 4px; font-size: 12.5px; font-weight: 500; color: var(--muted); }
+.slice-out { display: grid; gap: 6px; justify-items: start; align-content: start; }
+.slice-out strong { font-family: var(--font-mono); font-size: 26px; line-height: 1.1; color: var(--accent-text); }
+.slice-out > span { font-size: 12.5px; color: var(--muted); }
+.slice-out .size-problem { font-size: 13px; padding: 8px 10px; margin: 0; }
+.slice-note { grid-column: 1 / -1; margin: 0; }
+.sizing > .actions { margin-bottom: 8px; }
+@media (max-width: 900px) { .slice-row { grid-template-columns: 1fr; } }

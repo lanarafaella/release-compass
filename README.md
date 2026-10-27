@@ -14,7 +14,7 @@ Live: https://lanarafaella.github.io/release-compass/
 - Everything runs in the browser. Answers are not sent anywhere.
 - Content is based on public sources only. Each practice shows its source and whether the
   citation has been checked against the original text.
-- The app does not suggest pass thresholds. The test-set size estimate uses values the user enters; the defaults are examples only.
+- The app does not suggest pass thresholds. The test-set size estimate sizes each slice on its own threshold, including zero-tolerance slices, using values the user enters; the defaults are examples only.
 
 ## Run
 

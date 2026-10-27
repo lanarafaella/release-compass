@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeTier, practicesFor, buildReport, showRag, wilsonLower, casesPerSlice, planSize, Z } from '../src/logic.js'
+import { computeTier, practicesFor, buildReport, showRag, wilsonLower, casesPerSlice, planSize, planRows, casesZeroFailures, failBoundZero, Z } from '../src/logic.js'
 import { SOURCES } from '../src/data/sources.js'
 import { PRACTICES } from '../src/data/practices.js'
 
@@ -109,4 +109,35 @@ test('available cases give a bound per slice', () => {
   const p = planSize({ slices: 5, target: 90, expected: 98, confidence: 95, available: 100 })
   assert.equal(p.eachAvailable, 20)
   assert.ok(p.boundWithAvailable > 0 && p.boundWithAvailable < 0.98)
+})
+
+test('zero tolerance: no failures in n cases bounds the failure rate', () => {
+  assert.equal(casesZeroFailures({ maxFail: 1, confidence: 95 }), 299)
+  assert.equal(casesZeroFailures({ maxFail: 0.5, confidence: 95 }), 598)
+  assert.equal(casesZeroFailures({ maxFail: 0, confidence: 95 }), null)
+  assert.ok(failBoundZero(299, 95) <= 0.01)
+  assert.ok(failBoundZero(298, 95) > 0.01)
+})
+
+test('each slice keeps its own threshold and the total is the sum', () => {
+  const sizing = {
+    confidence: '95',
+    rows: [
+      { id: 'a', kind: 'rate', target: 90, expected: 98, maxFail: 1, have: '' },
+      { id: 'b', kind: 'rate', target: 95, expected: 99, maxFail: 1, have: '' },
+      { id: 'c', kind: 'zero', target: '', expected: '', maxFail: 1, have: 100 },
+    ],
+  }
+  const plan = planRows(sizing)
+  assert.equal(plan.allValid, true)
+  assert.ok(plan.rows[1].cases > plan.rows[0].cases)
+  assert.equal(plan.rows[2].cases, 299)
+  assert.equal(plan.rows[2].haveOk, false)
+  assert.equal(plan.total, plan.rows[0].cases + plan.rows[1].cases + 299)
+})
+
+test('one invalid slice blocks the total', () => {
+  const plan = planRows({ confidence: '95', rows: [{ id: 'a', kind: 'rate', target: 95, expected: 90, have: '' }] })
+  assert.equal(plan.allValid, false)
+  assert.equal(plan.total, null)
 })

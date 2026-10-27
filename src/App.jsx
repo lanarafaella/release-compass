@@ -7,6 +7,7 @@ import {
 } from './data/questions.js'
 import { AREAS, KIND_LABEL } from './data/practices.js'
 import Sizing from './Sizing.jsx'
+import { planRows, SIZE_CAP } from './logic.js'
 import { Logo, TierBars, KindIcon } from './Brand.jsx'
 import { APP_NAME, TAGLINE } from './brand.js'
 import {
@@ -21,7 +22,26 @@ import {
 
 const STORE = 'ai-release-guide:v1'
 
-const DEFAULT_SIZING = { slices: 4, target: 90, expected: 98, confidence: '95', available: '' }
+const newRow = (r) => ({ id: Math.random().toString(36).slice(2, 9), name: '', kind: 'rate', target: 90, expected: 98, maxFail: 1, have: '', ...r })
+
+const DEFAULT_SIZING = {
+  confidence: '95',
+  rows: [
+    newRow({ name: 'Accuracy', target: 90, expected: 98 }),
+    newRow({ name: 'Tone and format', target: 95, expected: 99 }),
+    newRow({ name: 'Safety, zero tolerance', kind: 'zero', maxFail: 1 }),
+  ],
+}
+
+// Older saved state had one threshold for every slice. Turn it into one row per slice.
+function migrateSizing(sz) {
+  if (!sz || sz.rows) return sz || DEFAULT_SIZING
+  const n = Math.max(1, Math.min(20, Math.floor(Number(sz.slices) || 1)))
+  return {
+    confidence: sz.confidence || '95',
+    rows: Array.from({ length: n }, (_, i) => newRow({ name: `Slice ${i + 1}`, target: sz.target, expected: sz.expected })),
+  }
+}
 
 const TABS = [
   { id: 'risk', label: 'Product & risk' },
@@ -39,7 +59,10 @@ function loadState() {
   const fresh = { name: '', description: '', answers: {}, sizing: DEFAULT_SIZING }
   try {
     const raw = localStorage.getItem(STORE)
-    if (raw) return { ...fresh, ...JSON.parse(raw) }
+    if (raw) {
+      const saved = JSON.parse(raw)
+      return { ...fresh, ...saved, sizing: migrateSizing(saved.sizing) }
+    }
   } catch {
     // storage may be unavailable; the app works without it
   }
@@ -56,7 +79,7 @@ function Question({ q, value, onChange }) {
       </div>
       {q.help && <p className="q-help">{q.help}</p>}
       {q.type === 'select' && (
-        <select id={id} value={value ?? ''} onChange={(e) => onChange(q.id, e.target.value || undefined)}>
+        <select id={id} className={value ? 'answered' : undefined} value={value ?? ''} onChange={(e) => onChange(q.id, e.target.value || undefined)}>
           <option value="">Select an answer</option>
           {q.options.map((o) => (
             <option key={o.value} value={o.value}>{o.label}</option>
@@ -85,7 +108,7 @@ function Question({ q, value, onChange }) {
             const list = Array.isArray(value) ? value : []
             const checked = list.includes(o.value)
             return (
-              <label key={o.value} className="check">
+              <label key={o.value} className={checked ? 'check on' : 'check'}>
                 <input
                   type="checkbox"
                   checked={checked}
@@ -185,6 +208,68 @@ function TierCard({ result, unknown }) {
   )
 }
 
+function LiveSummary({ download, copy, copied, result, unknown, practices, newIds, capAnswered, capTotal, sizing, tab, go }) {
+  const required = practices.filter((p) => p.applied === 'required').length
+  const recommended = practices.length - required
+  const added = practices.filter((p) => p.condition)
+  const plan = planRows(sizing)
+  return (
+    <aside className="summary" aria-live="polite" aria-label="Live summary">
+      <TierCard key={result.tier} result={result} unknown={unknown} />
+
+      <div className="actions">
+        <button type="button" onClick={download}>Download report</button>
+        <button type="button" className="secondary" onClick={copy}>{copied ? 'Copied' : 'Copy report'}</button>
+      </div>
+
+      {result.tier !== null && (
+        <div className="side-card">
+          <p className="tier-label">Your plan so far</p>
+          <div className="side-counts">
+            <div><strong>{required}</strong><span>core</span></div>
+            <div><strong>{recommended}</strong><span>recommended</span></div>
+          </div>
+          <p className="side-line">Capabilities answered: {capAnswered} of {capTotal}</p>
+          {tab !== 'plan' && (
+            <button type="button" className="secondary small" onClick={() => go('plan')}>Open the plan</button>
+          )}
+        </div>
+      )}
+
+      <div className="side-card">
+        <p className="tier-label">Added by your answers</p>
+        {added.length === 0 ? (
+          <p className="side-line">Nothing yet. Capability answers add practices here.</p>
+        ) : (
+          <ul className="side-list">
+            {added.map((p) => (
+              <li key={p.id} className={newIds.includes(p.id) ? 'new' : undefined}>
+                <span className={`level ${p.applied}`}>{p.applied === 'required' ? 'Core' : 'Rec.'}</span>
+                <span>{p.title}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {tab === 'size' && (
+        <div className="side-card">
+          <p className="tier-label">Test set size</p>
+          {plan.allValid ? (
+            <p className="side-line">{fmt(plan.total)} cases in total for {plan.rows.length} slice{plan.rows.length === 1 ? '' : 's'}.</p>
+          ) : (
+            <p className="side-line">Fill in every slice to see the total.</p>
+          )}
+        </div>
+      )}
+
+      <p className="fine">
+        Guidance based on public sources. It is not a standard, not legal advice and not a release approval. Runs in your browser; nothing is sent anywhere.
+      </p>
+    </aside>
+  )
+}
+
 function Pager({ back, next, go }) {
   return (
     <div className="pager">
@@ -193,6 +278,8 @@ function Pager({ back, next, go }) {
     </div>
   )
 }
+
+const fmt = (n) => (n === Infinity ? `more than ${SIZE_CAP.toLocaleString('en-US')}` : n.toLocaleString('en-US'))
 
 export default function App() {
   const [state, setState] = useState(loadState)
@@ -268,6 +355,12 @@ export default function App() {
 
   const capQuestions = [...CAPABILITY_QUESTIONS, ...(rag ? RAG_QUESTIONS : []), ...PEOPLE_QUESTIONS]
   const capAnswered = capQuestions.filter((q) => answers[q.id] !== undefined).length
+
+  const prevIds = useRef(null)
+  const newIds = prevIds.current ? practices.filter((p) => !prevIds.current.has(p.id)).map((p) => p.id) : []
+  useEffect(() => {
+    prevIds.current = new Set(practices.map((p) => p.id))
+  }, [practices])
 
   const visible = practices.filter((p) => showRec || p.applied === 'required')
   const areas = AREAS.filter((a) => visible.some((p) => p.area === a))
@@ -374,10 +467,10 @@ export default function App() {
         )}
       </div>
 
+      <div className="layout">
       <div className="panel" role="tabpanel" id={`panel-${tab}`} aria-labelledby={`tab-${tab}`}>
         {tab === 'risk' && (
-          <div className="layout">
-            <div className="form">
+          <div className="form">
               <Section title="Your product" intro="Optional. The text appears in the exported report only. It does not change the result.">
                 <div className="two-fields">
                   <label className="field">
@@ -411,13 +504,6 @@ export default function App() {
               </Section>
               <Pager next={TABS[1]} go={go} />
             </div>
-            <aside className="summary" aria-live="polite">
-              <TierCard result={result} unknown={unknown} />
-              <p className="fine">
-                Guidance based on public sources. It is not a standard, not legal advice and not a release approval. Runs in your browser; nothing is sent anywhere.
-              </p>
-            </aside>
-          </div>
         )}
 
         {tab === 'capabilities' && (
@@ -467,15 +553,10 @@ export default function App() {
             ) : (
               <>
                 <div className="plan-top">
-                  <TierCard result={result} unknown={unknown} />
                   <div className="plan-side">
                     <div className="counts">
                       <div><strong>{required}</strong><span>core practices</span></div>
                       <div><strong>{recommended}</strong><span>recommended</span></div>
-                    </div>
-                    <div className="actions">
-                      <button type="button" onClick={download}>Download report</button>
-                      <button type="button" className="secondary" onClick={copy}>{copied ? 'Copied' : 'Copy report'}</button>
                     </div>
                     <label className="toggle">
                       <input type="checkbox" checked={showRec} onChange={(e) => setShowRec(e.target.checked)} />
@@ -537,10 +618,25 @@ export default function App() {
 
         {tab === 'size' && (
           <>
-            <Sizing sizing={sizing} setSizing={setSizing} />
+            <Sizing sizing={sizing} setSizing={setSizing} newRow={newRow} />
             <Pager back={TABS[2]} go={go} />
           </>
         )}
+      </div>
+      <LiveSummary
+        download={download}
+        copy={copy}
+        copied={copied}
+        result={result}
+        unknown={unknown}
+        practices={practices}
+        newIds={newIds}
+        capAnswered={capAnswered}
+        capTotal={capQuestions.length}
+        sizing={sizing}
+        tab={tab}
+        go={go}
+      />
       </div>
     </div>
   )

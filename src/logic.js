@@ -91,6 +91,63 @@ export function planSize(input) {
   return out
 }
 
+// Zero-tolerance slices: 100% cannot be proven. With no failures in n cases, the failure rate is
+// below maxFail (%) at the given one-sided confidence once (1 - maxFail)^n <= 1 - confidence.
+export function casesZeroFailures({ maxFail, confidence }) {
+  const p = Number(maxFail) / 100
+  const c = Number(confidence) / 100
+  if (!(p > 0 && p < 1) || !(c > 0 && c < 1)) return null
+  return Math.ceil(Math.log(1 - c) / Math.log(1 - p) - 1e-9)
+}
+
+// Highest failure rate still possible after n cases with no failures.
+export function failBoundZero(n, confidence) {
+  if (!(n > 0)) return null
+  return 1 - Math.pow(1 - Number(confidence) / 100, 1 / n)
+}
+
+// Each row is one slice with its own threshold. kind 'rate': target lower bound and expected pass
+// rate (Wilson). kind 'zero': no failures allowed, sized by the failure rate you can live with.
+export function planRows(sizing) {
+  const confidence = Number(sizing.confidence)
+  const rows = (sizing.rows || []).map((r) => {
+    const out = { ...r, valid: false }
+    if (r.kind === 'zero') {
+      const n = casesZeroFailures({ maxFail: r.maxFail, confidence })
+      if (n === null) {
+        out.problem = 'Enter an allowed failure rate between 0 and 100 (for example 1).'
+        return out
+      }
+      out.valid = true
+      out.cases = n
+      const have = Math.floor(Number(r.have) || 0)
+      if (have > 0) {
+        out.have = have
+        out.haveBound = failBoundZero(have, confidence)
+        out.haveOk = have >= n
+      }
+      return out
+    }
+    const one = planSize({ slices: 1, target: r.target, expected: r.expected, confidence })
+    if (!one.valid) {
+      out.problem = one.problem
+      return out
+    }
+    out.valid = true
+    out.cases = one.perSlice
+    const have = Math.floor(Number(r.have) || 0)
+    if (have > 0) {
+      out.have = have
+      out.haveBound = wilsonLower(Number(r.expected) / 100, have, Z[confidence])
+      out.haveOk = have >= one.perSlice
+    }
+    return out
+  })
+  const allValid = rows.length > 0 && rows.every((r) => r.valid)
+  const total = allValid ? rows.reduce((a, r) => a + r.cases, 0) : null
+  return { rows, allValid, total }
+}
+
 export function makeContext(answers, tier) {
   return {
     tier,
@@ -155,25 +212,29 @@ export function buildReport({ name, description, answers, sizing }) {
     for (const d of drivers) lines.push(`- ${d.id} ${d.label} ${d.answer}${d.unknown ? " (unknown answers count as High)" : ''}`)
     lines.push('')
   }
-  if (sizing) {
-    const plan = planSize(sizing)
+  if (sizing && sizing.rows) {
+    const plan = planRows(sizing)
     lines.push('## Test set size estimate', '')
-    if (!plan.valid) {
-      lines.push(plan.problem, '')
-    } else {
-      lines.push(
-        `Inputs: ${plan.slices} slice(s), target lower bound ${sizing.target}%, expected pass rate ${sizing.expected}%, ${sizing.confidence}% one-sided confidence.`,
-        '',
-        `- Cases needed per slice: ${fmt(plan.perSlice)}`,
-        `- Cases needed in total: ${fmt(plan.total)}`,
-      )
-      if (plan.available) {
-        lines.push(
-          `- With ${plan.available} cases available, each slice gets ${plan.eachAvailable}; the lower bound at the expected pass rate would be ${plan.boundWithAvailable === null ? 'not defined' : (plan.boundWithAvailable * 100).toFixed(1) + '%'}.`,
-        )
+    lines.push(`${sizing.confidence}% one-sided confidence. Each slice has its own threshold.`, '')
+    for (const r of plan.rows) {
+      const label = r.name || 'Unnamed slice'
+      if (!r.valid) {
+        lines.push(`- ${label}: ${r.problem}`)
+      } else if (r.kind === 'zero') {
+        lines.push(`- ${label} (zero tolerance, failure rate below ${r.maxFail}%): ${fmt(r.cases)} cases, all must pass.`)
+      } else {
+        lines.push(`- ${label} (target lower bound ${r.target}%, expected pass rate ${r.expected}%): ${fmt(r.cases)} cases.`)
       }
-      lines.push('', 'Method: Wilson score lower bound, one-sided. Assumes the observed pass rate equals the expected rate. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
+      if (r.valid && r.have) {
+        const b = r.kind === 'zero'
+          ? `with ${r.have} cases and no failures the failure rate is below ${(r.haveBound * 100).toFixed(2)}%`
+          : `with ${r.have} cases the lower bound at the expected pass rate would be ${(r.haveBound * 100).toFixed(1)}%`
+        lines.push(`  - ${b}${r.haveOk ? '' : ' (not enough yet)'}.`)
+      }
     }
+    lines.push('')
+    if (plan.allValid) lines.push(`Total: ${fmt(plan.total)} cases.`, '')
+    lines.push('Method: normal slices use the Wilson score lower bound, one-sided, and assume the observed pass rate equals the expected rate. Zero-tolerance slices cannot prove 100%; they show the failure rate is below the stated limit when no case fails. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
   }
   lines.push('## Answers', '')
   for (const q of ALL_QUESTIONS) {
