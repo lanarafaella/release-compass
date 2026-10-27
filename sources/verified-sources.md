@@ -29,9 +29,24 @@ does not use the term "red teaming".
 
 ## OWASP Top 10 for Agentic Applications for 2026
 
-Source: https://genai.owasp.org/resource/owasp-top-10-for-agentic-applications-for-2026/
-Published 2025-12-09. Entry list is in the linked download. Status: title and date verified,
-individual entries NOT yet checked.
+Published 2025-12-09. Entry titles taken from the OWASP announcement page:
+https://genai.owasp.org/2025/12/09/owasp-top-10-for-agentic-applications-the-benchmark-for-agentic-security-in-the-age-of-autonomous-ai/
+
+| ID | Title | Status |
+|---|---|---|
+| ASI01 | Agent Goal Hijack | title verified |
+| ASI02 | Tool Misuse | title verified |
+| ASI03 | Identity & Privilege Abuse | title verified |
+| ASI04 | Agentic Supply Chain Vulnerabilities | title verified |
+| ASI05 | Unexpected Code Execution | title verified |
+| ASI06 | Memory & Context Poisoning | title verified |
+| ASI07 | Insecure Inter-Agent Communication | title verified |
+| ASI08 | Cascading Failures | title verified |
+| ASI09 | Human-Agent Trust Exploitation | title verified |
+| ASI10 | Rogue Agents | title verified |
+
+Only the titles were checked. The full document (a download that returned an HTML page when
+fetched by script) has not been read, so descriptions are not recorded.
 
 ## Good Machine Learning Practice for Medical Device Development: Guiding Principles
 
@@ -181,7 +196,8 @@ as amended at 89 FR 47054, May 30, 2024). Sections: 318.1 purpose and scope, 318
 
 ## Still to check
 
-OWASP Top 10 for Agentic Applications entry list.
+Full text of the OWASP Agentic Top 10 document (titles only so far).
+IMDRF final GMLP document (January 2025): not read.
 
 ## Books and courses (ideas, not standards)
 
