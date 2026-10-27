@@ -141,6 +141,22 @@ export default function App() {
   const [state, setState] = useState(loadState)
   const [showRec, setShowRec] = useState(true)
   const [copied, setCopied] = useState(false)
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem(`${STORE}:theme`) === 'light' ? 'light' : 'dark'
+    } catch {
+      return 'dark'
+    }
+  })
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    try {
+      localStorage.setItem(`${STORE}:theme`, theme)
+    } catch {
+      // ignore
+    }
+  }, [theme])
   const { name, description, answers, sizing } = state
   const setSizing = (next) => setState((s) => ({ ...s, sizing: next }))
 
@@ -205,7 +221,17 @@ export default function App() {
           <Logo />
           <span className="brand-name">{APP_NAME}</span>
         </span>
-        <span className="privacy-pill">Runs in your browser. Nothing is sent anywhere.</span>
+        <span className="topbar-right">
+          <span className="privacy-pill">Runs in your browser. Nothing is sent anywhere.</span>
+          <button
+            type="button"
+            className="ghost theme-toggle"
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+          >
+            {theme === 'dark' ? 'Light' : 'Dark'}
+          </button>
+        </span>
       </nav>
 
       <header className="hero">

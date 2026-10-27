@@ -4,10 +4,10 @@
 export function Logo({ size = 32 }) {
   return (
     <svg width={size} height={size} viewBox="0 0 32 32" aria-hidden="true" focusable="false">
-      <rect width="32" height="32" rx="9" fill="var(--accent)" />
-      <circle cx="16" cy="16" r="9.5" fill="none" stroke="#fff" strokeWidth="1.6" opacity="0.9" />
-      <path d="M16 8.5l3.4 7.5-3.4 7.5-3.4-7.5z" fill="#fff" />
-      <circle cx="16" cy="16" r="1.5" fill="var(--accent)" />
+      <rect width="32" height="32" rx="8" fill="var(--accent)" />
+      <circle cx="16" cy="16" r="9.5" fill="none" stroke="var(--accent-ink)" strokeWidth="1.8" />
+      <path d="M16 8l3.6 8-3.6 8-3.6-8z" fill="var(--accent-ink)" />
+      <circle cx="16" cy="16" r="1.6" fill="var(--accent)" />
     </svg>
   )
 }
@@ -24,9 +24,9 @@ export function TierBars({ tier }) {
           y={30 - h}
           width="10"
           height={h}
-          rx="2.5"
+          rx="2"
           fill="currentColor"
-          opacity={i <= tier ? 1 : 0.2}
+          opacity={i <= tier ? 1 : 0.22}
         />
       ))}
     </svg>
