@@ -214,7 +214,8 @@ RAGAS is a measurement tool. It is not a source of requirements.
 Full text of the OWASP Agentic Top 10 document (titles only so far).
 IMDRF final GMLP document (January 2025): not read.
 
-## Books and courses (ideas, not standards)
+## Books and courses
 
-Arbon, J. Testing AI: Engineering Confidence in Non-Deterministic Systems (2026).
-Author's own course material.
+No book or course content has been used in this version. Every practice rests on the sources above or is
+marked as common practice. If material from a book or a course is added later, it will be credited by name
+and paraphrased, never copied.
