@@ -157,9 +157,31 @@ international governance).
   circumstances may be responsible for suspending use or removing the application. Verified.
 - Automation bias (a clinician may overlook errors) is named as a risk in the document. Verified.
 
+## FTC Act, Section 5 (15 U.S.C. 45)
+
+Source: https://www.law.cornell.edu/uscode/text/15/45
+- 45(a)(1): "unfair or deceptive acts or practices in or affecting commerce, are hereby declared
+  unlawful." Verified.
+- 45(n): an act is "unfair" when it "causes or is likely to cause substantial injury to consumers
+  which is not reasonably avoidable by consumers themselves" and is not outweighed by countervailing
+  benefits. Verified.
+
+## FTC Health Breach Notification Rule (16 CFR Part 318)
+
+Source: https://www.law.cornell.edu/cfr/text/16/part-318 (source line: 74 FR 42980, Aug. 25, 2009,
+as amended at 89 FR 47054, May 30, 2024). Sections: 318.1 purpose and scope, 318.2 definitions,
+318.4 timeliness of notification, 318.5 methods of notice, 318.7 enforcement.
+- 318.4(a): notice to individuals promptly and "in no case later than 60 calendar days after the
+  discovery of a breach of security." Verified.
+- 318.4(b): notice to the FTC at the same time for 500 or more individuals; fewer than 500 may be
+  reported annually, within 60 days after the end of the calendar year. Verified.
+- Definitions of "PHR identifiable health information", "personal health record" and "breach of
+  security" are in 318.2. Opening words verified; full definitions not recorded here.
+- Whether a given product is covered by this rule is a legal question. Not assessed.
+
 ## Still to check
 
-FTC Act Section 5, FTC Health Breach Notification Rule.
+OWASP Top 10 for Agentic Applications entry list.
 
 ## Books and courses (ideas, not standards)
 
