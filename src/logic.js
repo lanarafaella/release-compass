@@ -32,6 +32,65 @@ export function computeTier(answers) {
   return { tier, drivers, answered, total: RISK_QUESTIONS.length }
 }
 
+// One-sided z values for common confidence levels.
+export const Z = { 90: 1.2816, 95: 1.6449, 99: 2.3263 }
+
+// Lower bound of the Wilson score interval. p is the observed pass rate (0..1), n the number of cases.
+export function wilsonLower(p, n, z) {
+  if (!(n > 0)) return 0
+  const z2 = z * z
+  const centre = p + z2 / (2 * n)
+  const spread = z * Math.sqrt((p * (1 - p)) / n + z2 / (4 * n * n))
+  return (centre - spread) / (1 + z2 / n)
+}
+
+export const SIZE_CAP = 100000
+
+// Smallest n per slice for which the Wilson lower bound of the expected pass rate
+// reaches the target. Returns null when the inputs cannot work.
+export function casesPerSlice({ target, expected, confidence }) {
+  const z = Z[confidence]
+  if (!z || !(target > 0 && target < 1) || !(expected > 0 && expected <= 1)) return null
+  if (expected <= target) return null
+  if (wilsonLower(expected, SIZE_CAP, z) < target) return Infinity
+  let lo = 1
+  let hi = SIZE_CAP
+  while (lo < hi) {
+    const mid = Math.floor((lo + hi) / 2)
+    if (wilsonLower(expected, mid, z) >= target) hi = mid
+    else lo = mid + 1
+  }
+  return lo
+}
+
+export function planSize(input) {
+  const slices = Math.max(1, Math.floor(Number(input.slices) || 0))
+  const target = Number(input.target) / 100
+  const expected = Number(input.expected) / 100
+  const confidence = Number(input.confidence)
+  const out = { slices, valid: false }
+  if (!(target > 0 && target < 1) || !(expected > 0 && expected <= 1) || !Z[confidence]) {
+    out.problem = 'Enter a target between 0 and 100, an expected pass rate up to 100, and a confidence level.'
+    return out
+  }
+  if (expected <= target) {
+    out.problem = 'The expected pass rate must be higher than the target. If the system is expected to pass less often than the target, no number of cases will show that it meets it.'
+    return out
+  }
+  const perSlice = casesPerSlice({ target, expected, confidence })
+  out.valid = true
+  out.perSlice = perSlice
+  out.total = perSlice === Infinity ? Infinity : perSlice * slices
+  const available = Math.floor(Number(input.available) || 0)
+  if (available > 0) {
+    const each = Math.floor(available / slices)
+    out.available = available
+    out.eachAvailable = each
+    out.boundWithAvailable = each > 0 ? wilsonLower(expected, each, Z[confidence]) : null
+  }
+  return out
+}
+
 export function makeContext(answers, tier) {
   return {
     tier,
@@ -73,7 +132,9 @@ function answerLabel(q, value) {
   return q.options.find((o) => o.value === value)?.label ?? value
 }
 
-export function buildReport({ name, description, answers }) {
+const fmt = (n) => (n === Infinity ? `more than ${SIZE_CAP.toLocaleString('en-US')}` : n.toLocaleString('en-US'))
+
+export function buildReport({ name, description, answers, sizing }) {
   const { tier, drivers, answered, total } = computeTier(answers)
   const list = practicesFor(answers)
   const lines = []
@@ -93,6 +154,26 @@ export function buildReport({ name, description, answers }) {
     lines.push('Driven by:')
     for (const d of drivers) lines.push(`- ${d.id} ${d.label} ${d.answer}${d.unknown ? " (unknown answers count as High)" : ''}`)
     lines.push('')
+  }
+  if (sizing) {
+    const plan = planSize(sizing)
+    lines.push('## Test set size estimate', '')
+    if (!plan.valid) {
+      lines.push(plan.problem, '')
+    } else {
+      lines.push(
+        `Inputs: ${plan.slices} slice(s), target lower bound ${sizing.target}%, expected pass rate ${sizing.expected}%, ${sizing.confidence}% one-sided confidence.`,
+        '',
+        `- Cases needed per slice: ${fmt(plan.perSlice)}`,
+        `- Cases needed in total: ${fmt(plan.total)}`,
+      )
+      if (plan.available) {
+        lines.push(
+          `- With ${plan.available} cases available, each slice gets ${plan.eachAvailable}; the lower bound at the expected pass rate would be ${plan.boundWithAvailable === null ? 'not defined' : (plan.boundWithAvailable * 100).toFixed(1) + '%'}.`,
+        )
+      }
+      lines.push('', 'Method: Wilson score lower bound, one-sided. Assumes the observed pass rate equals the expected rate. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
+    }
   }
   lines.push('## Answers', '')
   for (const q of ALL_QUESTIONS) {

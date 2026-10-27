@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeTier, practicesFor, buildReport, showRag } from '../src/logic.js'
+import { computeTier, practicesFor, buildReport, showRag, wilsonLower, casesPerSlice, planSize, Z } from '../src/logic.js'
 import { SOURCES } from '../src/data/sources.js'
 import { PRACTICES } from '../src/data/practices.js'
 
@@ -73,4 +73,40 @@ test('report contains the tier and source links', () => {
   assert.match(text, /\*\*High\*\*/)
   assert.match(text, /https:\/\/genai\.owasp\.org/)
   assert.match(text, /RAG evaluation|retrieval/i)
+})
+
+test('Wilson lower bound matches the worked examples', () => {
+  assert.ok(Math.abs(wilsonLower(19 / 20, 20, Z[95]) - 0.804) < 0.002)
+  assert.ok(Math.abs(wilsonLower(190 / 200, 200, Z[95]) - 0.918) < 0.002)
+})
+
+test('zero failures: n / (n + z^2)', () => {
+  const n = casesPerSlice({ target: 0.95, expected: 1, confidence: 95 })
+  assert.equal(n, 52)
+  assert.ok(wilsonLower(1, 52, Z[95]) >= 0.95)
+  assert.ok(wilsonLower(1, 51, Z[95]) < 0.95)
+})
+
+test('size plan multiplies by the number of slices', () => {
+  const one = planSize({ slices: 1, target: 90, expected: 98, confidence: 95 })
+  const four = planSize({ slices: 4, target: 90, expected: 98, confidence: 95 })
+  assert.equal(four.perSlice, one.perSlice)
+  assert.equal(four.total, one.perSlice * 4)
+})
+
+test('size plan rejects an expected rate at or below the target', () => {
+  const p = planSize({ slices: 2, target: 95, expected: 90, confidence: 95 })
+  assert.equal(p.valid, false)
+})
+
+test('higher confidence needs more cases', () => {
+  const a = planSize({ slices: 1, target: 90, expected: 98, confidence: 90 }).perSlice
+  const b = planSize({ slices: 1, target: 90, expected: 98, confidence: 99 }).perSlice
+  assert.ok(b > a)
+})
+
+test('available cases give a bound per slice', () => {
+  const p = planSize({ slices: 5, target: 90, expected: 98, confidence: 95, available: 100 })
+  assert.equal(p.eachAvailable, 20)
+  assert.ok(p.boundWithAvailable > 0 && p.boundWithAvailable < 0.98)
 })

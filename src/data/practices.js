@@ -62,7 +62,7 @@ export const PRACTICES = [
     area: 'Test data',
     title: 'Do not judge from a handful of examples',
     kind: 'measure',
-    what: 'Report how many cases each result is based on, and per category. Avoid drawing conclusions from narrow or anecdotal checks.',
+    what: 'Report how many cases each result is based on, and per category. Avoid drawing conclusions from narrow or anecdotal checks. The size estimate at the bottom of this page shows how many cases each slice needs.',
     why: 'Small or hand-picked samples overstate how well the system works.',
     level: byTier(C, R, R),
     sources: ['gai-ms25-001', 'nist-m25'],

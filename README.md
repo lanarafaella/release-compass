@@ -12,7 +12,7 @@ practices, each with its source.
 - Everything runs in the browser. Answers are not sent anywhere.
 - Content is based on public sources only. Each practice shows its source and whether the
   citation has been checked against the original text.
-- The app sets no numeric pass thresholds. It explains how a team can choose and justify its own.
+- The app does not suggest pass thresholds. The test-set size estimate uses values the user enters; the defaults are examples only.
 
 ## Run
 

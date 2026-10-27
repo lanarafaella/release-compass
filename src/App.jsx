@@ -6,6 +6,7 @@ import {
   PEOPLE_QUESTIONS,
 } from './data/questions.js'
 import { AREAS, KIND_LABEL } from './data/practices.js'
+import Sizing from './Sizing.jsx'
 import {
   TIER_NAMES,
   TIER_TEXT,
@@ -18,14 +19,17 @@ import {
 
 const STORE = 'ai-release-guide:v1'
 
+const DEFAULT_SIZING = { slices: 4, target: 90, expected: 98, confidence: '95', available: '' }
+
 function loadState() {
+  const fresh = { name: '', description: '', answers: {}, sizing: DEFAULT_SIZING }
   try {
     const raw = localStorage.getItem(STORE)
-    if (raw) return JSON.parse(raw)
+    if (raw) return { ...fresh, ...JSON.parse(raw) }
   } catch {
     // storage may be unavailable; the app works without it
   }
-  return { name: '', description: '', answers: {} }
+  return fresh
 }
 
 function Question({ q, value, onChange }) {
@@ -135,7 +139,8 @@ export default function App() {
   const [state, setState] = useState(loadState)
   const [showRec, setShowRec] = useState(true)
   const [copied, setCopied] = useState(false)
-  const { name, description, answers } = state
+  const { name, description, answers, sizing } = state
+  const setSizing = (next) => setState((s) => ({ ...s, sizing: next }))
 
   useEffect(() => {
     try {
@@ -163,7 +168,7 @@ export default function App() {
   const recommended = practices.length - required
   const tierClass = result.tier === null ? 'none' : ['low', 'medium', 'high'][result.tier]
 
-  const report = () => buildReport({ name, description, answers })
+  const report = () => buildReport({ name, description, answers, sizing })
 
   const download = () => {
     const blob = new Blob([report()], { type: 'text/markdown' })
@@ -186,7 +191,9 @@ export default function App() {
   }
 
   const reset = () => {
-    if (window.confirm('Clear all answers?')) setState({ name: '', description: '', answers: {} })
+    if (window.confirm('Clear all answers?')) {
+      setState({ name: '', description: '', answers: {}, sizing: DEFAULT_SIZING })
+    }
   }
 
   return (
@@ -331,6 +338,8 @@ export default function App() {
           ))}
         </section>
       )}
+
+      <Sizing sizing={sizing} setSizing={setSizing} />
 
       <footer className="foot">
         <p>
