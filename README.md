@@ -14,6 +14,25 @@ practices, each with its source.
   citation has been checked against the original text.
 - The app sets no numeric pass thresholds. It explains how a team can choose and justify its own.
 
+## Run
+
+```
+npm install
+npm run dev       # local development
+npm test          # logic tests
+npm run build     # static build in dist/
+```
+
+## How it works
+
+- `src/data/questions.js`: the questions and how each answer is scored.
+- `src/data/practices.js`: the evaluation practices, when each one applies, and its sources.
+- `src/data/sources.js`: the source registry (links to the original documents).
+- `src/logic.js`: risk level (the highest answer wins; "I don't know" counts as High) and practice selection.
+- `sources/verified-sources.md`: what was checked against each original, and what was not.
+
+The risk-level rule and the Core and Recommended labels are this project's own guidance. They are not taken from the sources.
+
 ## Status
 
-Early draft. Source list and citation checks come first, then the app.
+First working version. Open items: the full text of the OWASP Agentic Top 10 and the IMDRF GMLP document have not been read.
