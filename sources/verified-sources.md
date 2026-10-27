@@ -194,6 +194,21 @@ as amended at 89 FR 47054, May 30, 2024). Sections: 318.1 purpose and scope, 318
   security" are in 318.2. Opening words verified; full definitions not recorded here.
 - Whether a given product is covered by this rule is a legal question. Not assessed.
 
+## NIST AI RMF, additional subcategory
+
+| ID | What it says (short) | Status |
+|---|---|---|
+| MANAGE 1.2 | Treatment of documented risks is prioritized based on impact, likelihood and available resources or methods | verified |
+
+## RAGAS (tool, not a standard)
+
+Source: https://docs.ragas.io/en/stable/concepts/metrics/available_metrics/ (page dated 2025-12-09).
+RAG metrics named on the page: Context Precision, Context Recall, Context Entities Recall,
+Noise Sensitivity, Response Relevancy, Faithfulness, Multimodal Faithfulness, Multimodal Relevance.
+The page names them but does not define them; definitions are on each metric's own page and are
+not recorded here. Note: the current name is "Response Relevancy", not "Answer Relevancy".
+RAGAS is a measurement tool. It is not a source of requirements.
+
 ## Still to check
 
 Full text of the OWASP Agentic Top 10 document (titles only so far).
