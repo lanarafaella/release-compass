@@ -116,6 +116,11 @@ function PracticeCard({ p }) {
         <p className="p-kind">{KIND_LABEL[p.kind]}</p>
         {p.condition && <p className="p-cond">{p.condition}</p>}
         <p>{p.what}</p>
+        {p.steps && (
+          <ul className="p-steps">
+            {p.steps.map((s) => <li key={s}>{s}</li>)}
+          </ul>
+        )}
         <p><strong>Why:</strong> {p.why}</p>
         {p.note && <p className="p-note">{p.note}</p>}
         <div className="chips">

@@ -108,7 +108,12 @@ export function buildReport({ name, description, answers }) {
       lines.push(`### ${p.title}`)
       lines.push(`Area: ${p.area}. ${KIND_LABEL[p.kind]}.`)
       if (p.condition) lines.push(p.condition)
-      lines.push('', p.what, '', `Why: ${p.why}`)
+      lines.push('', p.what)
+      if (p.steps) {
+        lines.push('')
+        for (const s of p.steps) lines.push(`- ${s}`)
+      }
+      lines.push('', `Why: ${p.why}`)
       if (p.note) lines.push('', `Note: ${p.note}`)
       lines.push('', 'Sources:')
       for (const s of p.sourceList) lines.push(`- ${s.label}${s.note ? ` (${s.note})` : ''}: ${s.url}`)

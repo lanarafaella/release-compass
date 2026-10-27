@@ -138,6 +138,8 @@ button:disabled { opacity: 0.45; cursor: not-allowed; }
 .level.recommended { background: var(--line); color: var(--muted); }
 .p-body { padding: 0 16px 16px; font-size: 15px; }
 .p-body p { margin: 0 0 10px; }
+.p-steps { margin: 0 0 12px; padding-left: 20px; }
+.p-steps li { margin-bottom: 6px; }
 .p-kind { font-size: 13px; color: var(--muted); }
 .p-cond { font-size: 13.5px; color: var(--accent); }
 .p-note { font-size: 13.5px; color: var(--muted); border-left: 3px solid var(--line); padding-left: 10px; }
