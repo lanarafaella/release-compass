@@ -1,6 +1,6 @@
-# ai-release-guide
+# Release Compass
 
-A static web app that helps a team decide how to evaluate an AI product before release.
+Release Compass (repository: ai-release-guide) is a static web app that helps a team decide how to evaluate an AI product before release.
 
 The user answers questions about the product (who uses it, what a wrong answer can affect,
 what data it handles, what it can do). The app shows a risk level and a list of evaluation

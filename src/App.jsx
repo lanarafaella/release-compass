@@ -7,6 +7,8 @@ import {
 } from './data/questions.js'
 import { AREAS, KIND_LABEL } from './data/practices.js'
 import Sizing from './Sizing.jsx'
+import { Logo, TierBars, KindIcon } from './Brand.jsx'
+import { APP_NAME, TAGLINE } from './brand.js'
 import {
   TIER_NAMES,
   TIER_TEXT,
@@ -111,13 +113,13 @@ function SourceChip({ s }) {
 
 function PracticeCard({ p }) {
   return (
-    <details className="practice">
+    <details className={`practice ${p.applied}`}>
       <summary>
         <span className={`level ${p.applied}`}>{p.applied === 'required' ? 'Core' : 'Recommended'}</span>
         <span className="p-title">{p.title}</span>
       </summary>
       <div className="p-body">
-        <p className="p-kind">{KIND_LABEL[p.kind]}</p>
+        <p className="p-kind"><KindIcon kind={p.kind} />{KIND_LABEL[p.kind]}</p>
         {p.condition && <p className="p-cond">{p.condition}</p>}
         <p>{p.what}</p>
         {p.steps && (
@@ -198,13 +200,26 @@ export default function App() {
 
   return (
     <div className="page">
+      <nav className="topbar" aria-label="Product">
+        <span className="brand">
+          <Logo />
+          <span className="brand-name">{APP_NAME}</span>
+        </span>
+        <span className="privacy-pill">Runs in your browser. Nothing is sent anywhere.</span>
+      </nav>
+
       <header className="hero">
-        <p className="eyebrow">AI Release Guide</p>
+        <p className="eyebrow">{TAGLINE}</p>
         <h1>How should we evaluate this AI product?</h1>
         <p className="lede">
-          Describe your product and answer a few questions. You get a risk level and a list of evaluation
-          practices, each with its source. Everything runs in your browser. Nothing is sent anywhere.
+          Answer a few questions about your product. You get a risk level and a list of evaluation practices,
+          each with the public source behind it.
         </p>
+        <ol className="steps">
+          <li><span className="step-n">1</span><span>Describe the product</span></li>
+          <li><span className="step-n">2</span><span>Answer the questions</span></li>
+          <li><span className="step-n">3</span><span>Get your evaluation plan</span></li>
+        </ol>
       </header>
 
       <div className="layout">
@@ -276,7 +291,10 @@ export default function App() {
               </>
             ) : (
               <>
-                <p className="tier-name">{TIER_NAMES[result.tier]}</p>
+                <div className="tier-head">
+                  <TierBars tier={result.tier} />
+                  <p className="tier-name">{TIER_NAMES[result.tier]}</p>
+                </div>
                 <p className="tier-text">{TIER_TEXT[result.tier]}</p>
                 <p className="tier-why">
                   <strong>Set by:</strong>{' '}
