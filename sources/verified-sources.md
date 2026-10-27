@@ -52,9 +52,49 @@ Source for the ten titles: UK MHRA publication page on gov.uk.
 | 9 | Users are provided clear, essential information | verified |
 | 10 | Deployed models are monitored for performance and retraining risks are managed | verified |
 
+## NIST AI Risk Management Framework (AI RMF 1.0)
+
+NIST AI 100-1, January 2023. https://doi.org/10.6028/NIST.AI.100-1
+Read from the PDF text. Four functions: GOVERN, MAP, MEASURE, MANAGE. Subcategory wording below
+is shortened; ids are exact.
+
+| ID | What it says (short) | Status |
+|---|---|---|
+| MEASURE 1.1 | Metrics are selected starting with the most significant risks; risks that will not or cannot be measured are documented | verified |
+| MEASURE 1.2 | Appropriateness of metrics and effectiveness of controls are regularly assessed and updated | verified |
+| MEASURE 1.3 | Internal experts who were not front-line developers, or independent assessors, take part in assessments; domain experts and users are consulted as needed | verified |
+| MEASURE 2.1 | Test sets, metrics and details about tools used during TEVV are documented | verified |
+| MEASURE 2.2 | Evaluations involving human subjects meet applicable requirements and are representative of the relevant population | verified |
+| MEASURE 2.3 | Performance or assurance criteria are measured and demonstrated for conditions similar to the deployment setting | verified |
+| MEASURE 2.4 | Functionality and behavior are monitored when in production | verified |
+| MEASURE 2.5 | The system is demonstrated to be valid and reliable; limits of generalizability are documented | verified |
+| MEASURE 2.6 | Regular safety evaluation; demonstrated to be safe, residual risk within tolerance, can fail safely | verified |
+| MEASURE 2.7 | Security and resilience are evaluated and documented | verified |
+| MEASURE 2.8 | Transparency and accountability risks are examined and documented | verified |
+| MEASURE 2.9 | Model is explained, validated and documented; output is interpreted in context | verified |
+| MEASURE 2.10 | Privacy risk is examined and documented | verified |
+| MEASURE 2.11 | Fairness and bias are evaluated and documented | verified |
+| MEASURE 2.13 | Effectiveness of the TEVV metrics and processes is evaluated and documented | verified |
+| MEASURE 3.1 | Approaches are in place to identify and track existing, unanticipated and emergent risks | verified |
+| MEASURE 3.3 | Feedback processes for end users and impacted communities | verified |
+| MEASURE 4.1 | Measurement approaches are connected to deployment context and informed by domain experts and users | verified |
+| MEASURE 4.2 | Trustworthiness results are informed by domain experts to validate consistent performance | verified |
+| MANAGE 1.1 | A determination is made whether the system achieves its purpose and whether deployment should proceed | verified |
+| MANAGE 1.3 | Responses to high-priority risks are planned; options include mitigating, transferring, avoiding or accepting | verified |
+| MANAGE 1.4 | Negative residual risks are documented | verified |
+| MANAGE 2.3 | Procedures to respond to and recover from a previously unknown risk | verified |
+| MANAGE 2.4 | Mechanisms to supersede, disengage or deactivate systems that perform inconsistently with intended use | verified |
+| MANAGE 4.1 | Post-deployment monitoring plans, including user input, appeal and override, decommissioning, incident response, recovery and change management | verified |
+| MANAGE 4.2 | Continual improvement is integrated into system updates | verified |
+| MANAGE 4.3 | Incidents and errors are communicated and tracked | verified |
+
+Note: the document's tables place category headings (for example "MEASURE 3: Mechanisms for tracking
+identified AI risks over time") beside subcategories that belong to the previous category when the
+table breaks across pages. The subcategory ids are the reliable key.
+
 ## Still to check
 
-NIST AI RMF 1.0 (functions and subcategories), NIST AI 600-1 Generative AI Profile,
+NIST AI 600-1 Generative AI Profile,
 WHO guidance on ethics and governance of AI for health (2021) and large multi-modal models (2024),
 FTC Act Section 5, FTC Health Breach Notification Rule.
 
