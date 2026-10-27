@@ -6,6 +6,8 @@ The user answers questions about the product (who uses it, what a wrong answer c
 what data it handles, what it can do). The app shows a risk level and a list of evaluation
 practices, each with its source.
 
+Live: https://svetlanazap.github.io/release-compass/
+
 ## Scope
 
 - This is a guidance layer. It does not run evaluations and is not an evaluation platform.
