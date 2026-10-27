@@ -92,9 +92,42 @@ Note: the document's tables place category headings (for example "MEASURE 3: Mec
 identified AI risks over time") beside subcategories that belong to the previous category when the
 table breaks across pages. The subcategory ids are the reliable key.
 
+## NIST AI 600-1, Generative AI Profile
+
+NIST AI 600-1, July 2024. https://doi.org/10.6028/NIST.AI.600-1
+Read from the PDF text. The profile lists 12 risks and gives suggested actions with ids that
+point to AI RMF subcategories (GV, MP, MS, MG prefixes = GOVERN, MAP, MEASURE, MANAGE).
+
+Twelve risks (titles exact): 1 CBRN Information or Capabilities; 2 Confabulation; 3 Dangerous,
+Violent, or Hateful Content; 4 Data Privacy; 5 Environmental Impacts; 6 Harmful Bias or
+Homogenization; 7 Human-AI Configuration; 8 Information Integrity; 9 Information Security;
+10 Intellectual Property; 11 Obscene, Degrading, and/or Abusive Content; 12 Value Chain and
+Component Integration. Status: verified.
+
+Note: the risk list uses "Harmful Bias or Homogenization" in the list and "Harmful Bias and
+Homogenization" in the action tables. Cite the list form.
+
+Data Privacy risk text names "biometric, health, location, or other personally identifiable
+information or sensitive data". Dangerous, Violent, or Hateful Content includes
+"recommendations to carry out self-harm".
+
+Suggested actions checked (short wording):
+
+| Action ID | What it says (short) | Status |
+|---|---|---|
+| MS-1.3-002 | Engage in internal and external evaluations, red-teaming, impact assessments or other structured human feedback with people who know the context of use | verified |
+| MS-2.3-003 | Share pre-deployment test results with relevant actors, such as those with system release approval authority | verified |
+| MS-2.5-001 | Avoid extrapolating system performance from narrow, non-systematic, anecdotal assessments | verified |
+| MS-2.5-003 | Review and verify sources and citations in outputs during pre-deployment measurement and ongoing monitoring | verified |
+| MS-2.7-007 | Perform AI red-teaming to assess resilience against abuse, GAI attacks (for example prompt injection) and ML attacks | verified |
+| MS-2.11-001 | Apply use-case appropriate benchmarks to quantify systemic bias, stereotyping and hateful content; document benchmark limits | verified |
+| MS-2.13-001 | Check construct validity of each metric; measure and document variance in metrics or structured human feedback | verified |
+| MS-4.2-005 | Verify and document how structured feedback results enter go/no-go, monitoring and decommission decisions | verified |
+| MP-5.1-005 | Conduct adversarial role-playing, red-teaming or chaos testing to find unforeseen failure modes | verified |
+| MG-4.1-002 | Post-deployment monitoring procedures, particularly for confabulation, CBRN or cyber risks | wording incomplete in extraction; not used |
+
 ## Still to check
 
-NIST AI 600-1 Generative AI Profile,
 WHO guidance on ethics and governance of AI for health (2021) and large multi-modal models (2024),
 FTC Act Section 5, FTC Health Breach Notification Rule.
 
