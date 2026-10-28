@@ -148,6 +148,38 @@ export function planRows(sizing) {
   return { rows, allValid, total }
 }
 
+// Budget mode: the user says how many cases they can afford in total. The budget is split
+// evenly across slices and each slice shows what can honestly be claimed with its share.
+export function planBudget(sizing) {
+  const confidence = Number(sizing.confidence)
+  const rows = sizing.rows || []
+  const budget = Math.floor(Number(sizing.budget) || 0)
+  if (!rows.length) return { valid: false, problem: 'Add at least one slice.', rows: [] }
+  if (budget < rows.length) return { valid: false, problem: `Enter a budget of at least ${rows.length} cases, one per slice.`, rows: [] }
+  const z = Z[confidence]
+  const base = Math.floor(budget / rows.length)
+  const extra = budget - base * rows.length
+  const need = planRows(sizing).rows
+  const out = rows.map((r, i) => {
+    const n = base + (i < extra ? 1 : 0)
+    const row = { ...r, cases: n, needed: need[i].valid ? need[i].cases : null }
+    if (r.kind === 'zero') {
+      row.failBound = failBoundZero(n, confidence)
+      row.meets = row.needed !== null && n >= row.needed
+    } else {
+      const expected = Number(r.expected) / 100
+      if (!(expected > 0 && expected <= 1)) {
+        row.problem = 'Enter the pass rate you expect.'
+        return row
+      }
+      row.lowerBound = wilsonLower(expected, n, z)
+      row.meets = row.needed !== null && n >= row.needed
+    }
+    return row
+  })
+  return { valid: true, budget, rows: out, meeting: out.filter((r) => r.meets).length }
+}
+
 export function makeContext(answers, tier) {
   return {
     tier,
@@ -216,6 +248,19 @@ export function buildReport({ name, description, answers, sizing }) {
     const plan = planRows(sizing)
     lines.push('## Test set size estimate', '')
     lines.push(`${sizing.confidence}% one-sided confidence. Each slice has its own threshold.`, '')
+    if (sizing.mode === 'budget') {
+      const b = planBudget(sizing)
+      if (b.valid) {
+        lines.push(`Budget: ${b.budget} cases, split evenly. ${b.meeting} of ${b.rows.length} slices reach their target.`, '')
+        for (const r of b.rows) {
+          const label = r.name || 'Unnamed slice'
+          if (r.kind === 'zero') lines.push(`- ${label}: ${r.cases} cases. With no failures, the failure rate is below ${(r.failBound * 100).toFixed(1)}%.`)
+          else if (r.problem) lines.push(`- ${label}: ${r.problem}`)
+          else lines.push(`- ${label}: ${r.cases} cases. At a ${r.expected}% pass rate the lower bound is ${(r.lowerBound * 100).toFixed(1)}% (target ${r.target}%).`)
+        }
+        lines.push('', 'Cases needed to reach each target:', '')
+      }
+    }
     for (const r of plan.rows) {
       const label = r.name || 'Unnamed slice'
       if (!r.valid) {

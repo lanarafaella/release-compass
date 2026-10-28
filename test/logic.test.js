@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { computeTier, practicesFor, buildReport, showRag, wilsonLower, casesPerSlice, planSize, planRows, casesZeroFailures, failBoundZero, Z } from '../src/logic.js'
+import { computeTier, practicesFor, buildReport, showRag, wilsonLower, casesPerSlice, planSize, planRows, planBudget, casesZeroFailures, failBoundZero, Z } from '../src/logic.js'
 import { SOURCES } from '../src/data/sources.js'
 import { PRACTICES } from '../src/data/practices.js'
 
@@ -140,4 +140,28 @@ test('one invalid slice blocks the total', () => {
   const plan = planRows({ confidence: '95', rows: [{ id: 'a', kind: 'rate', target: 95, expected: 90, have: '' }] })
   assert.equal(plan.allValid, false)
   assert.equal(plan.total, null)
+})
+
+test('budget mode splits cases evenly and reports the claim per slice', () => {
+  const sizing = {
+    confidence: '95',
+    budget: 100,
+    rows: [
+      { id: 'a', kind: 'rate', target: 90, expected: 98 },
+      { id: 'b', kind: 'zero', maxFail: 5 },
+    ],
+  }
+  const b = planBudget(sizing)
+  assert.equal(b.valid, true)
+  assert.equal(b.rows[0].cases + b.rows[1].cases, 100)
+  assert.equal(b.rows[0].meets, true)
+  assert.equal(b.rows[1].cases, 50)
+  assert.equal(b.rows[1].needed, 59)
+  assert.equal(b.rows[1].meets, false)
+  assert.ok(Math.abs(b.rows[1].failBound - 0.058) < 0.001)
+})
+
+test('budget below one case per slice is rejected', () => {
+  const b = planBudget({ confidence: '95', budget: 1, rows: [{ id: 'a', kind: 'zero', maxFail: 5 }, { id: 'b', kind: 'zero', maxFail: 5 }] })
+  assert.equal(b.valid, false)
 })

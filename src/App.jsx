@@ -7,7 +7,7 @@ import {
 } from './data/questions.js'
 import { AREAS, KIND_LABEL } from './data/practices.js'
 import Sizing from './Sizing.jsx'
-import { planRows, SIZE_CAP } from './logic.js'
+import { planRows, planBudget, SIZE_CAP } from './logic.js'
 import { Logo, TierBars, KindIcon } from './Brand.jsx'
 import { APP_NAME, TAGLINE } from './brand.js'
 import {
@@ -22,14 +22,16 @@ import {
 
 const STORE = 'ai-release-guide:v1'
 
-const newRow = (r) => ({ id: Math.random().toString(36).slice(2, 9), name: '', kind: 'rate', target: 90, expected: 98, maxFail: 1, have: '', ...r })
+const newRow = (r) => ({ id: Math.random().toString(36).slice(2, 9), name: '', kind: 'rate', target: 90, expected: 98, maxFail: 5, have: '', ...r })
 
 const DEFAULT_SIZING = {
   confidence: '95',
+  mode: 'need',
+  budget: 200,
   rows: [
     newRow({ name: 'Accuracy', target: 90, expected: 98 }),
-    newRow({ name: 'Tone and format', target: 95, expected: 99 }),
-    newRow({ name: 'Safety, zero tolerance', kind: 'zero', maxFail: 1 }),
+    newRow({ name: 'Tone and format', target: 90, expected: 98 }),
+    newRow({ name: 'Safety, zero tolerance', kind: 'zero', maxFail: 5 }),
   ],
 }
 
@@ -213,6 +215,7 @@ function LiveSummary({ download, copy, copied, result, unknown, practices, newId
   const recommended = practices.length - required
   const added = practices.filter((p) => p.condition)
   const plan = planRows(sizing)
+  const budgetPlan = planBudget(sizing)
   return (
     <aside className="summary" aria-live="polite" aria-label="Live summary">
       <TierCard key={result.tier} result={result} unknown={unknown} />
@@ -255,7 +258,15 @@ function LiveSummary({ download, copy, copied, result, unknown, practices, newId
       {tab === 'size' && (
         <div className="side-card">
           <p className="tier-label">Test set size</p>
-          {plan.allValid ? (
+          {sizing.mode === 'budget' ? (
+            budgetPlan.valid ? (
+              <p className="side-line">
+                Budget {fmt(budgetPlan.budget)} cases. {budgetPlan.meeting} of {budgetPlan.rows.length} slices reach their target.
+              </p>
+            ) : (
+              <p className="side-line">{budgetPlan.problem}</p>
+            )
+          ) : plan.allValid ? (
             <p className="side-line">{fmt(plan.total)} cases in total for {plan.rows.length} slice{plan.rows.length === 1 ? '' : 's'}.</p>
           ) : (
             <p className="side-line">Fill in every slice to see the total.</p>
