@@ -165,3 +165,20 @@ test('budget below one case per slice is rejected', () => {
   const b = planBudget({ confidence: '95', budget: 1, rows: [{ id: 'a', kind: 'zero', maxFail: 5 }, { id: 'b', kind: 'zero', maxFail: 5 }] })
   assert.equal(b.valid, false)
 })
+
+test('cases you have are subtracted from what is still to write', () => {
+  const plan = planRows({
+    confidence: '95',
+    rows: [
+      { id: 'a', kind: 'rate', target: 90, expected: 98, have: 10 },
+      { id: 'b', kind: 'rate', target: 90, expected: 98, have: 2 },
+      { id: 'c', kind: 'zero', maxFail: 5, have: 100 },
+    ],
+  })
+  const need = plan.rows[0].cases
+  assert.equal(plan.rows[0].remaining, need - 10)
+  assert.equal(plan.rows[1].remaining, need - 2)
+  assert.equal(plan.rows[2].remaining, 0)
+  assert.equal(plan.remaining, need - 10 + need - 2)
+  assert.equal(plan.haveAny, true)
+})

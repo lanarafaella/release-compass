@@ -134,6 +134,11 @@ export default function Sizing({ sizing, setSizing, newRow }) {
                 <>
                   <strong>{fmt(r.cases)}</strong>
                   <span>{r.kind === 'zero' ? 'cases, all must pass' : 'cases needed'}</span>
+                  {Number(r.have) > 0 && (
+                    <span className={r.remaining === 0 ? 'claim ok' : 'claim short'}>
+                      {r.remaining === 0 ? 'Enough cases' : `${fmt(r.remaining)} still to write`}
+                    </span>
+                  )}
                 </>
               ) : (
                 <span className="size-problem">{r.problem}</span>
@@ -164,6 +169,12 @@ export default function Sizing({ sizing, setSizing, newRow }) {
               <strong>{fmt(plan.total)}</strong>
               <span>cases in total ({plan.rows.length} slice{plan.rows.length === 1 ? '' : 's'})</span>
             </div>
+            {plan.haveAny && (
+              <div>
+                <strong>{fmt(plan.remaining)}</strong>
+                <span>still to write, after the cases you have</span>
+              </div>
+            )}
           </div>
           <p className="size-note">
             How to read it: each slice is sized on its own, so the total is the sum. Normal slices assume the observed

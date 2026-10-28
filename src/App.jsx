@@ -267,7 +267,10 @@ function LiveSummary({ download, copy, copied, result, unknown, practices, newId
               <p className="side-line">{budgetPlan.problem}</p>
             )
           ) : plan.allValid ? (
-            <p className="side-line">{fmt(plan.total)} cases in total for {plan.rows.length} slice{plan.rows.length === 1 ? '' : 's'}.</p>
+            <p className="side-line">
+              {fmt(plan.total)} cases in total for {plan.rows.length} slice{plan.rows.length === 1 ? '' : 's'}.
+              {plan.haveAny && ` ${fmt(plan.remaining)} still to write.`}
+            </p>
           ) : (
             <p className="side-line">Fill in every slice to see the total.</p>
           )}

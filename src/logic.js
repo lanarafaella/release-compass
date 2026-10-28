@@ -144,8 +144,14 @@ export function planRows(sizing) {
     return out
   })
   const allValid = rows.length > 0 && rows.every((r) => r.valid)
+  // Cases already written count toward the slice; only the rest still has to be written.
+  for (const r of rows) {
+    if (r.valid) r.remaining = r.cases === Infinity ? Infinity : Math.max(0, r.cases - Math.floor(Number(r.have) || 0))
+  }
   const total = allValid ? rows.reduce((a, r) => a + r.cases, 0) : null
-  return { rows, allValid, total }
+  const remaining = allValid ? rows.reduce((a, r) => a + r.remaining, 0) : null
+  const haveAny = rows.some((r) => Math.floor(Number(r.have) || 0) > 0)
+  return { rows, allValid, total, remaining, haveAny }
 }
 
 // Budget mode: the user says how many cases they can afford in total. The budget is split
@@ -278,7 +284,7 @@ export function buildReport({ name, description, answers, sizing }) {
       }
     }
     lines.push('')
-    if (plan.allValid) lines.push(`Total: ${fmt(plan.total)} cases.`, '')
+    if (plan.allValid) lines.push(`Total: ${fmt(plan.total)} cases.${plan.haveAny ? ` Still to write: ${fmt(plan.remaining)}.` : ''}`, '')
     lines.push('Method: normal slices use the Wilson score lower bound, one-sided, and assume the observed pass rate equals the expected rate. Zero-tolerance slices cannot prove 100%; they show the failure rate is below the stated limit when no case fails. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
   }
   lines.push('## Answers', '')
