@@ -210,7 +210,7 @@ function TierCard({ result, unknown }) {
   )
 }
 
-function LiveSummary({ download, copy, copied, result, unknown, practices, newIds, capAnswered, capTotal, sizing, tab, go }) {
+function LiveSummary({ download, downloadDocx, copy, copied, result, unknown, practices, newIds, capAnswered, capTotal, sizing, tab, go }) {
   const required = practices.filter((p) => p.applied === 'required').length
   const recommended = practices.length - required
   const added = practices.filter((p) => p.condition)
@@ -221,7 +221,8 @@ function LiveSummary({ download, copy, copied, result, unknown, practices, newId
       <TierCard key={result.tier} result={result} unknown={unknown} />
 
       <div className="actions">
-        <button type="button" onClick={download}>Download report</button>
+        <button type="button" onClick={downloadDocx}>Download .docx</button>
+        <button type="button" className="secondary" onClick={download}>Download .md</button>
         <button type="button" className="secondary" onClick={copy}>{copied ? 'Copied' : 'Copy report'}</button>
       </div>
 
@@ -385,14 +386,22 @@ export default function App() {
 
   const report = () => buildReport({ name, description, answers, sizing })
 
-  const download = () => {
-    const blob = new Blob([report()], { type: 'text/markdown' })
+  const fileBase = `ai-release-guide-${(name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`
+
+  const save = (blob, ext) => {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `ai-release-guide-${(name || 'product').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.md`
+    a.download = `${fileBase}.${ext}`
     a.click()
     URL.revokeObjectURL(url)
+  }
+
+  const download = () => save(new Blob([report()], { type: 'text/markdown' }), 'md')
+
+  const downloadDocx = async () => {
+    const { reportToDocx } = await import('./docxReport.js')
+    save(await reportToDocx(report()), 'docx')
   }
 
   const copy = async () => {
@@ -639,6 +648,7 @@ export default function App() {
       </div>
       <LiveSummary
         download={download}
+        downloadDocx={downloadDocx}
         copy={copy}
         copied={copied}
         result={result}

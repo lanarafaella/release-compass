@@ -350,6 +350,7 @@ select { color-scheme: dark; }
 select option { background: var(--surface); color: var(--text); }
 .summary .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .summary .actions button { padding-inline: 8px; }
+.summary .actions button:first-child { grid-column: 1 / -1; }
 
 /* Per-slice sizing rows */
 .conf-field { max-width: 320px; }
