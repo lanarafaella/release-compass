@@ -252,40 +252,48 @@ export function buildReport({ name, description, answers, sizing }) {
   }
   if (sizing && sizing.rows) {
     const plan = planRows(sizing)
+    const cell = (v) => String(v).replace(/\|/g, '/')
+    const row = (cells) => `| ${cells.map(cell).join(' | ')} |`
+    const kindLabel = (r) => (r.kind === 'zero' ? 'Zero tolerance' : 'Pass rate')
+    const thresholdLabel = (r) =>
+      r.kind === 'zero' ? `Failure rate below ${r.maxFail}%` : `Lower bound ${r.target}%, expected ${r.expected}%`
     lines.push('## Test set size estimate', '')
     lines.push(`${sizing.confidence}% one-sided confidence. Each slice has its own threshold.`, '')
-    if (sizing.mode === 'budget') {
-      const b = planBudget(sizing)
-      if (b.valid) {
-        lines.push(`Budget: ${b.budget} cases, split evenly. ${b.meeting} of ${b.rows.length} slices reach their target.`, '')
-        for (const r of b.rows) {
-          const label = r.name || 'Unnamed slice'
-          if (r.kind === 'zero') lines.push(`- ${label}: ${r.cases} cases. With no failures, the failure rate is below ${(r.failBound * 100).toFixed(1)}%.`)
-          else if (r.problem) lines.push(`- ${label}: ${r.problem}`)
-          else lines.push(`- ${label}: ${r.cases} cases. At a ${r.expected}% pass rate the lower bound is ${(r.lowerBound * 100).toFixed(1)}% (target ${r.target}%).`)
-        }
-        lines.push('', 'Cases needed to reach each target:', '')
-      }
-    }
+    lines.push(row(['Slice', 'Type', 'Threshold', 'Cases needed', 'Cases you have', 'Still to write', 'Status']))
+    lines.push(row(['---', '---', '---', '---:', '---:', '---:', '---']))
     for (const r of plan.rows) {
       const label = r.name || 'Unnamed slice'
       if (!r.valid) {
-        lines.push(`- ${label}: ${r.problem}`)
-      } else if (r.kind === 'zero') {
-        lines.push(`- ${label} (zero tolerance, failure rate below ${r.maxFail}%): ${fmt(r.cases)} cases, all must pass.`)
-      } else {
-        lines.push(`- ${label} (target lower bound ${r.target}%, expected pass rate ${r.expected}%): ${fmt(r.cases)} cases.`)
+        lines.push(row([label, kindLabel(r), '', '', '', '', r.problem]))
+        continue
       }
-      if (r.valid && r.have) {
-        const b = r.kind === 'zero'
-          ? `with ${r.have} cases and no failures the failure rate is below ${(r.haveBound * 100).toFixed(2)}%`
-          : `with ${r.have} cases the lower bound at the expected pass rate would be ${(r.haveBound * 100).toFixed(1)}%`
-        lines.push(`  - ${b}${r.haveOk ? '' : ' (not enough yet)'}.`)
-      }
+      const have = Math.floor(Number(r.have) || 0)
+      lines.push(row([label, kindLabel(r), thresholdLabel(r), fmt(r.cases), have, fmt(r.remaining), r.remaining === 0 ? 'Enough' : 'Need more']))
+    }
+    if (plan.allValid) {
+      const haveTotal = plan.rows.reduce((t, r) => t + Math.floor(Number(r.have) || 0), 0)
+      lines.push(row(['**Total**', '', '', `**${fmt(plan.total)}**`, `**${haveTotal}**`, `**${fmt(plan.remaining)}**`, '']))
     }
     lines.push('')
-    if (plan.allValid) lines.push(`Total: ${fmt(plan.total)} cases.${plan.haveAny ? ` Still to write: ${fmt(plan.remaining)}.` : ''}`, '')
-    lines.push('Method: normal slices use the Wilson score lower bound, one-sided, and assume the observed pass rate equals the expected rate. Zero-tolerance slices cannot prove 100%; they show the failure rate is below the stated limit when no case fails. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
+    if (sizing.mode === 'budget') {
+      const bp = planBudget(sizing)
+      if (bp.valid) {
+        lines.push('### What the budget supports', '')
+        lines.push(`Budget: ${bp.budget} cases, split evenly. ${bp.meeting} of ${bp.rows.length} slices reach their target.`, '')
+        lines.push(row(['Slice', 'Type', 'Cases from budget', 'What you can claim', 'Reaches target']))
+        lines.push(row(['---', '---', '---:', '---', '---']))
+        for (const r of bp.rows) {
+          const claim = r.problem
+            ? r.problem
+            : r.kind === 'zero'
+              ? `If none fail: failure rate below ${(r.failBound * 100).toFixed(1)}%`
+              : `Lower bound ${(r.lowerBound * 100).toFixed(1)}% (target ${r.target}%)`
+          lines.push(row([r.name || 'Unnamed slice', kindLabel(r), r.cases, claim, r.meets ? 'Yes' : 'No']))
+        }
+        lines.push('')
+      }
+    }
+    lines.push('Method: pass-rate slices use the Wilson score lower bound, one-sided, and assume the observed pass rate equals the expected rate. Zero-tolerance slices cannot prove 100%; they show the failure rate is below the stated limit when no case fails. Each slice is sized on its own. No correction is applied for testing many slices at once.', '')
   }
   lines.push('## Answers', '')
   for (const q of ALL_QUESTIONS) {

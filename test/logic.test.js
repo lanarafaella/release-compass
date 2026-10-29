@@ -182,3 +182,17 @@ test('cases you have are subtracted from what is still to write', () => {
   assert.equal(plan.remaining, need - 10 + need - 2)
   assert.equal(plan.haveAny, true)
 })
+
+test('report shows the size plan as a table with what is still to write', () => {
+  const md = buildReport({
+    name: 'x', description: '', answers: {},
+    sizing: { confidence: '95', mode: 'need', rows: [
+      { id: 'a', name: 'Accuracy', kind: 'rate', target: 90, expected: 98, have: 10 },
+      { id: 'b', name: 'Safety', kind: 'zero', maxFail: 5, have: 0 },
+    ] },
+  })
+  assert.ok(md.includes('| Slice | Type | Threshold | Cases needed | Cases you have | Still to write | Status |'))
+  assert.ok(md.includes('| Accuracy | Pass rate | Lower bound 90%, expected 98% | 39 | 10 | 29 | Need more |'))
+  assert.ok(md.includes('| Safety | Zero tolerance | Failure rate below 5% | 59 | 0 | 59 | Need more |'))
+  assert.ok(md.includes('| **Total** |  |  | **98** | **10** | **88** |  |'))
+})
